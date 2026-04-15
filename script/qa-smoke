@@ -17,6 +17,7 @@ mkdir -p "$repo_root/.tmp"
 
 cat > "$init_file" <<EOF
 (add-to-list 'load-path "$repo_root")
+(require 'cl-lib)
 (require 'tmux-emacs-csi-u)
 (setq tmux-emacs-csi-u-auto-enable t)
 EOF
