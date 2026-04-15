@@ -17,7 +17,7 @@ tmux stays on `csi-u`. This repo fixes the Emacs TTY decode gap instead of downg
 Clone or place the repo on your Emacs load path, then load it from `init.el`.
 
 ```elisp
-(add-to-list 'load-path (expand-file-name "~/workspace/infra/tmux-emacs-csi-u"))
+(add-to-list 'load-path (expand-file-name "path/to/tmux-emacs-csi-u"))
 (require 'tmux-emacs-csi-u)
 
 ;; optional: only for daemon/client edge cases where tty detection cannot
@@ -82,13 +82,13 @@ Policy: warn-and-preserve.
 
 ## nested repo isolation
 
-`~/workspace/infra/tmux-emacs-csi-u` stays as a child repo inside the larger infra workspace.
+If this repo lives as a child repo inside a larger workspace, keep that parent workspace free of ordinary untracked child-repo noise.
 
 Operational contract:
 
-- parent `~/workspace/infra` status should not list this child repo as ordinary untracked noise
-- verify with `cd ~/workspace/infra && git status --short`
-- treat parent-local Git ignore rules as the isolation mechanism; keep repo-local implementation inside the child repo
+- parent workspace status should not list this child repo as ordinary untracked noise
+- verify from the parent with `git status --short`
+- treat parent-local ignore rules as the isolation mechanism; keep repo-local implementation inside the child repo
 
 ## latest local fixture evidence
 
