@@ -150,10 +150,15 @@ When CHECK-ONLY is non-nil, do not write the formatted contents."
   (let ((diagnostic-buffer " *tmux-emacs-csi-u-checkdoc*"))
     (when-let ((buffer (get-buffer diagnostic-buffer)))
       (kill-buffer buffer))
-    (with-current-buffer (find-file-noselect path)
-      (let ((checkdoc-diagnostic-buffer diagnostic-buffer)
-            (checkdoc-spellcheck-documentation-flag nil))
-        (checkdoc-current-buffer t)))
+    (let* ((existing-buffer (find-buffer-visiting path))
+           (buffer (find-file-noselect path)))
+      (unwind-protect
+          (with-current-buffer buffer
+            (let ((checkdoc-diagnostic-buffer diagnostic-buffer)
+                  (checkdoc-spellcheck-documentation-flag nil))
+              (checkdoc-current-buffer t)))
+        (unless existing-buffer
+          (kill-buffer buffer))))
     (when-let ((buffer (get-buffer diagnostic-buffer)))
       (prog1
           (with-current-buffer buffer

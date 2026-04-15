@@ -23,7 +23,12 @@
 
 (defun tmux-emacs-csi-u-core--readable-binding (binding)
   "Render BINDING for human-readable summaries."
-  (or (and (or (stringp binding) (vectorp binding))
+  (or (and (integerp binding)
+           (condition-case nil
+               (let ((description (key-description (vector binding))))
+                 (and (> (length description) 0) description))
+             (error nil)))
+      (and (or (stringp binding) (vectorp binding))
            (condition-case nil
                (let ((description (key-description binding)))
                  (and (> (length description) 0) description))
