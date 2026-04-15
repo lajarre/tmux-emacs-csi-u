@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+source "$(dirname -- "$0")/lib.sh"
+
+case "${1-}" in
+  "")
+    tmux_emacs_csi_u_gate tmux-emacs-csi-u-script-format
+    ;;
+  --check)
+    tmux_emacs_csi_u_gate tmux-emacs-csi-u-script-format-check
+    ;;
+  *)
+    printf 'usage: %s [--check]\n' "$0" >&2
+    exit 2
+    ;;
+esac

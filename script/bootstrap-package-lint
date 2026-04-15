@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+source "$(dirname -- "$0")/lib.sh"
+
+tmux_emacs_csi_u_gate tmux-emacs-csi-u-script-bootstrap-package-lint

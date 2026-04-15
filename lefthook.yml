@@ -1,0 +1,14 @@
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      run: script/format
+      stage_fixed: true
+    lint:
+      run: script/lint
+
+pre-push:
+  parallel: false
+  commands:
+    check:
+      run: script/check
