@@ -4,10 +4,12 @@ Emacs-side decoder for tmux `CSI-u` sequences in terminal Emacs.
 
 tmux stays on `csi-u`. This repo fixes the Emacs TTY decode gap instead of downgrading tmux key reporting.
 
+Scope: the delta over Emacs native tmux/xterm decode, not a replacement for the native path.
+
 ## what it solves
 
 - systematic printable ASCII coverage from generated data
-- explicit overrides for space, return, tab, backspace, escape, and shifted punctuation
+- explicit overrides for the non-native space / return / tab delta, modified backspace / escape, and shifted punctuation
 - terminal-local install into `input-decode-map`
 - warn-and-preserve conflict handling for already-customized setups
 - Pi can keep tmux `extended-keys-format csi-u`
@@ -46,16 +48,20 @@ Manual enable is available too:
 
 ## migration from ad hoc bindings
 
-Delete the ad hoc `input-decode-map` entries for sequences this package now owns.
+Delete the ad hoc `input-decode-map` entries for sequences this package still owns.
 
 Remove one-off snippets for:
 
-- `\e[32;2u`, `\e[32;3u`, `\e[32;5u`, `\e[32;6u`, `\e[32;7u`, `\e[32;8u`
-- `\e[13;2u`, `\e[13;3u`, `\e[13;5u`, `\e[13;6u`, `\e[13;7u`, `\e[13;8u`
-- `\e[9;2u`, `\e[9;3u`, `\e[9;5u`, `\e[9;6u`
+- `\e[32;2u`, `\e[32;5u`, `\e[32;6u`, `\e[32;8u`
+- `\e[13;3u`, `\e[13;8u`
+- `\e[9;3u`
 - `\e[127;2u`, `\e[127;3u`, `\e[127;5u`, `\e[127;6u`, `\e[127;7u`
 - `\e[27;3u`, `\e[27;5u`, `\e[27;6u`
 - `\e[59;2u` and the shifted punctuation family derived from `test/fixture/punctuation.json` (`;2`, `;4`, `;6`, `;8` for the captured local targets)
+
+Emacs already covers part of the tmux -> xterm path natively or effectively, so this repo no longer claims `\e[32;3u`, `\e[32;7u`, `\e[9;2u`, `\e[9;5u`, `\e[9;6u`, `\e[13;2u`, `\e[13;5u`, `\e[13;6u`, or `\e[13;7u`.
+
+Codepoint-form xterm-native lossy punctuation such as `\e[58;6u` is documented skip behavior in `test/fixture/generated-matrix.json`; the fixture-derived base-keycode family such as `\e[59;6u` stays package-owned.
 
 Keep unrelated terminal bindings that are not tmux `CSI-u` sequences.
 
@@ -100,7 +106,7 @@ The punctuation fixture in `test/fixture/punctuation.json` records this captured
 - input source: ABC
 - capture command: `cat -v`
 
-The generated printable baseline in `test/fixture/generated-matrix.json` covers printable ASCII keycodes `32..126` across tmux modifiers `2..8`, with documented skip entries for lossy `kbd` aliases.
+The generated printable baseline in `test/fixture/generated-matrix.json` covers printable ASCII keycodes `32..126` across tmux modifiers `2..8`, with documented skip entries for native xterm overlaps, xterm-lossy punctuation collapses, and lossy `kbd` aliases.
 
 ## manual verification matrix
 

@@ -10,6 +10,8 @@ This repo targets tmux `extended-keys-format csi-u` sequences in this form:
 
 The package does not parse an open-ended terminal protocol stream. It installs explicit `input-decode-map` entries for known tmux `CSI-u` sequences.
 
+Scope is the delta over Emacs native tmux/xterm decode on the tmux TTY path. When `xterm.el` already decodes a sequence exactly or effectively, this repo documents a skip instead of re-owning it.
+
 ## modifier model
 
 Generated printable coverage uses this exact tmux modifier model:
@@ -72,10 +74,13 @@ The generated printable baseline is not the final public behavior. The repo adds
 
 Required explicit families:
 
-- explicit space overrides: `\e[32;2u`, `\e[32;3u`, `\e[32;5u`, `\e[32;6u`, `\e[32;7u`, `\e[32;8u`
+- explicit space delta: `\e[32;2u`, `\e[32;5u`, `\e[32;6u`, `\e[32;8u`
 - generated space baseline still covers `\e[32;4u` as `M-S-SPC`
-- explicit return overrides: `\e[13;2u`, `\e[13;3u`, `\e[13;5u`, `\e[13;6u`, `\e[13;7u`, `\e[13;8u`
-- tab and backtab: `\e[9;2u`, `\e[9;3u`, `\e[9;5u`, `\e[9;6u`
+- native exact skip covers `\e[32;3u` and `\e[32;7u`
+- explicit return delta: `\e[13;3u` (`M-<return>`), `\e[13;8u` (`C-M-S-<return>`)
+- `xterm.el` already decodes `\e[13;2u`, `\e[13;5u`, `\e[13;6u`, and `\e[13;7u` natively
+- explicit tab delta: `\e[9;3u` (`M-<tab>`)
+- `\e[9;2u` stays effectively native via `[S-tab]` → `[backtab]`; `xterm.el` already decodes `\e[9;5u` and `\e[9;6u` natively
 - backspace family: `\e[127;2u`, `\e[127;3u`, `\e[127;5u`, `\e[127;6u`, `\e[127;7u`
 - escape family: `\e[27;3u`, `\e[27;5u`, `\e[27;6u`
 - shifted punctuation family derived from `test/fixture/punctuation.json`, including modifiers `2`, `4`, `6`, and `8` for the captured local targets
@@ -97,10 +102,12 @@ The repo installs candidates in this order:
 
 ### generated printable skip list
 
-Some printable pairs are intentionally skipped because `kbd` normalizes them to an existing Emacs event. The skip list lives in `test/fixture/generated-matrix.json`.
+Some printable pairs are intentionally skipped because `xterm.el` already decodes them exactly, `xterm.el` already decodes them but collapses the extra shift bit, or `kbd` normalizes them to an existing Emacs event. The skip list lives in `test/fixture/generated-matrix.json`.
 
-Reason text uses the exact `kbd normalizes ...` form, for example:
+Reason text uses exact forms such as:
 
+- `xterm.el decodes M-SPC natively`
+- `xterm.el collapses C-S-: to C-:`
 - `kbd normalizes C-I to TAB`
 - `kbd normalizes C-m to RET`
 - `kbd normalizes C-A to C-a`

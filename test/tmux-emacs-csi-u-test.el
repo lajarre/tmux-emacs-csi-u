@@ -224,9 +224,51 @@
              ((symbol-function 'terminal-live-p) (lambda (_terminal) t)))
      ,@body))
 
+(defun tmux-emacs-csi-u-test--printable-base-token (keycode)
+  "Return the canonical base token for printable ASCII KEYCODE."
+  (if (= keycode 32)
+      "SPC"
+    (char-to-string keycode)))
+
+(defun tmux-emacs-csi-u-test--printable-event-description (keycode modifier)
+  "Return the canonical event description for printable KEYCODE and MODIFIER."
+  (key-description
+   (kbd (concat (alist-get modifier '((2 . "S-")
+                                      (3 . "M-")
+                                      (4 . "M-S-")
+                                      (5 . "C-")
+                                      (6 . "C-S-")
+                                      (7 . "C-M-")
+                                      (8 . "C-M-S-")))
+                (tmux-emacs-csi-u-test--printable-base-token keycode)))))
+
+(defun tmux-emacs-csi-u-test--expected-xterm-native-exact-skip-reason (keycode modifier)
+  "Return the expected native exact skip reason for KEYCODE and MODIFIER."
+  (when (memq keycode
+              (alist-get modifier '((3 . (32))
+                                    (5 . (39 44 45 46 47 48 49 57 59 61 92))
+                                    (7 . (32 39 44 45 46 47 48 49 50 51 52 53
+                                             54 55 56 57 59 61 92)))))
+    (format "xterm.el decodes %s natively"
+            (tmux-emacs-csi-u-test--printable-event-description keycode modifier))))
+
+(defun tmux-emacs-csi-u-test--expected-xterm-native-lossy-skip-reason (keycode modifier)
+  "Return the expected native lossy skip reason for KEYCODE and MODIFIER."
+  (when (memq keycode
+              (alist-get modifier '((6 . (33 34 35 36 37 38 40 41 42 43 58 60 62 63))
+                                    (8 . (33 34 35 36 37 38 40 41 42 43 58 60 62 63)))))
+    (let ((collapsed-modifier (alist-get modifier '((6 . 5)
+                                                    (8 . 7)))))
+      (format "xterm.el collapses %s to %s"
+              (tmux-emacs-csi-u-test--printable-event-description keycode modifier)
+              (tmux-emacs-csi-u-test--printable-event-description keycode
+                                                                  collapsed-modifier)))))
+
 (defun tmux-emacs-csi-u-test--expected-generated-printable-skip-reason (keycode modifier)
   "Return the expected skip reason for printable KEYCODE and MODIFIER."
   (cond
+   ((tmux-emacs-csi-u-test--expected-xterm-native-exact-skip-reason keycode modifier))
+   ((tmux-emacs-csi-u-test--expected-xterm-native-lossy-skip-reason keycode modifier))
    ((and (= keycode 73) (= modifier 5)) "kbd normalizes C-I to TAB")
    ((and (= keycode 73) (= modifier 6)) "kbd normalizes C-S-I to S-TAB")
    ((and (= keycode 73) (= modifier 7)) "kbd normalizes C-M-I to M-TAB")
@@ -273,6 +315,12 @@
                         reason)
                   entries)))))
     (nreverse entries)))
+
+(defun tmux-emacs-csi-u-test--find-generated-printable-skip-entry (sequence)
+  "Return the generated printable skip entry for SEQUENCE."
+  (cl-find-if (lambda (entry)
+                (equal (plist-get entry :sequence) sequence))
+              (tmux-emacs-csi-u-data-generated-printable-skip-list)))
 
 (ert-deftest tmux-emacs-csi-u-test-support-signals ()
   (tmux-emacs-csi-u-test-with-live-tty
@@ -346,11 +394,23 @@
               (should (string-match-p (regexp-quote tty-text) rendered))
             (should-not (string-match-p (regexp-quote "tty-type:") rendered))))))))
 
-(ert-deftest tmux-emacs-csi-u-test-meta-tab-uses-meta-tab-event ()
-  (let* ((event (cdr (assoc "\e[9;3u" (tmux-emacs-csi-u-core-special-table))))
-         (expected (vector (event-convert-list '(meta tab)))))
-    (should (equal event expected))
-    (should (eq (aref event 0) (event-convert-list '(meta tab))))))
+(ert-deftest tmux-emacs-csi-u-test-special-table-keeps-only-non-native-return-tab-delta ()
+  (let ((special-table (tmux-emacs-csi-u-core-special-table)))
+    (dolist (sequence '("\e[32;3u"
+                        "\e[32;7u"
+                        "\e[9;2u"
+                        "\e[9;5u"
+                        "\e[9;6u"
+                        "\e[13;2u"
+                        "\e[13;5u"
+                        "\e[13;6u"
+                        "\e[13;7u"))
+      (should-not (assoc sequence special-table)))
+    (dolist (entry `(("\e[9;3u" . ,(kbd "M-<tab>"))
+                     ("\e[13;3u" . ,(kbd "M-<return>"))
+                     ("\e[13;8u" . ,(kbd "C-M-S-<return>"))))
+      (should (equal (cdr (assoc (car entry) special-table))
+                     (cdr entry))))))
 
 (ert-deftest tmux-emacs-csi-u-test-special-table-detaches-mutable-bindings ()
   (let* ((binding-a (cdr (assoc "\e[32;2u" (tmux-emacs-csi-u-core-special-table))))
@@ -404,10 +464,10 @@
       (should-not (assoc sequence table)))
     (should (equal (caar table) "\e[32;2u"))
     (should (equal (cadr table)
-                   (cons "\e[32;3u" (kbd "M-SPC"))))
-    (should (equal (nth 6 table)
+                   (cons "\e[32;4u" (kbd "M-S-SPC"))))
+    (should (equal (nth 4 table)
                    (cons "\e[32;8u" (kbd "C-M-S-SPC"))))
-    (should (equal (nth 7 table)
+    (should (equal (nth 5 table)
                    (cons "\e[33;2u" (kbd "S-!"))))
     (should (equal (cdr (assoc "\e[59;2u" table))
                    (kbd "S-;")))
@@ -428,6 +488,41 @@
     (should (file-exists-p fixture-path))
     (should (equal (tmux-emacs-csi-u-test--read-json-fixture "generated-matrix.json")
                    (tmux-emacs-csi-u-test--expected-generated-matrix-fixture)))))
+
+(ert-deftest tmux-emacs-csi-u-test-generated-skip-list-covers-xterm-native-overlaps ()
+  (let ((table (tmux-emacs-csi-u-data-generated-printable-table)))
+    (dolist (sequence '("\e[32;3u"
+                        "\e[32;7u"
+                        "\e[39;5u"
+                        "\e[58;6u"
+                        "\e[63;8u"))
+      (should-not (assoc sequence table)))
+    (dolist (case '(("\e[32;3u" "xterm.el decodes M-SPC natively")
+                    ("\e[32;7u" "xterm.el decodes C-M-SPC natively")
+                    ("\e[39;5u" "xterm.el decodes C-' natively")
+                    ("\e[58;6u" "xterm.el collapses C-S-: to C-:")
+                    ("\e[63;8u" "xterm.el collapses C-M-S-? to C-M-?")))
+      (pcase-let ((`(,sequence ,reason) case))
+        (let ((entry (tmux-emacs-csi-u-test--find-generated-printable-skip-entry
+                      sequence)))
+          (should entry)
+          (should (equal (plist-get entry :reason) reason)))))))
+
+(ert-deftest tmux-emacs-csi-u-test-shifted-punctuation-family-stays-owned-while-codepoint-form-is-skipped ()
+  (let* ((generated (tmux-emacs-csi-u-data-generated-printable-table))
+         (special (tmux-emacs-csi-u-data-special-table))
+         (table (tmux-emacs-csi-u-data-build-candidate-table))
+         (native-skip (tmux-emacs-csi-u-test--find-generated-printable-skip-entry
+                       "\e[58;6u")))
+    (should (equal (key-description (cdr (assoc "\e[59;6u" generated))) "C-S-;"))
+    (should (equal (key-description (cdr (assoc "\e[59;6u" special))) "C-:"))
+    (should (equal (key-description (cdr (assoc "\e[59;6u" table))) "C-:"))
+    (should-not (tmux-emacs-csi-u-test--find-generated-printable-skip-entry
+                 "\e[59;6u"))
+    (should native-skip)
+    (should (equal (plist-get native-skip :reason)
+                   "xterm.el collapses C-S-: to C-:"))
+    (should-not (assoc "\e[58;6u" table))))
 
 (ert-deftest tmux-emacs-csi-u-test-shifted-punctuation-overrides-follow-canonical-char-capture ()
   (let* ((generated (tmux-emacs-csi-u-data-generated-printable-table))
@@ -486,10 +581,12 @@
    "README.md"
    '("# tmux-emacs-csi-u"
      "tmux stays on `csi-u`"
+     "delta over Emacs native tmux/xterm decode"
      "(require 'tmux-emacs-csi-u)"
      "Delete the ad hoc `input-decode-map` entries"
      "derived from `test/fixture/punctuation.json` (`;2`, `;4`, `;6`, `;8`"
      "\\e[9;2u"
+     "\\e[58;6u"
      "\\e[13;4u"
      "tmux-emacs-csi-u-supported-p"
      "script/qa-smoke"
@@ -500,11 +597,14 @@
    "doc/ref/protocol.md"
    '("# protocol reference"
      "ESC [ keycode ; modifier u"
+     "delta over Emacs native tmux/xterm decode"
      "`test/fixture/generated-matrix.json`"
      "`test/fixture/punctuation.json`"
      "generated space baseline still covers `\\e[32;4u`"
      "including modifiers `2`, `4`, `6`, and `8`"
      "`\\e[13;4u` (`M-S-RET`)"
+     "xterm.el decodes"
+     "xterm.el collapses"
      "kbd normalizes"
      "Bug #50699"))
   (tmux-emacs-csi-u-test--assert-repo-file-contains

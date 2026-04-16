@@ -38,6 +38,40 @@ KEYCODE and MODIFIER identify the skipped sequence and REASON explains why."
         :sequence (tmux-emacs-csi-u-data--printable-sequence keycode modifier)
         :reason reason))
 
+(defun tmux-emacs-csi-u-data--printable-binding (keycode modifier)
+  "Return the canonical generated printable event for KEYCODE and MODIFIER."
+  (let ((prefix (tmux-emacs-csi-u-data-modifier-prefix modifier)))
+    (unless prefix
+      (error "Unsupported tmux CSI-u modifier: %S" modifier))
+    (kbd (concat prefix
+                 (tmux-emacs-csi-u-data--printable-base-token keycode)))))
+
+(defun tmux-emacs-csi-u-data--printable-event-description (keycode modifier)
+  "Return the canonical printable event description for KEYCODE and MODIFIER."
+  (key-description (tmux-emacs-csi-u-data--printable-binding keycode modifier)))
+
+(defun tmux-emacs-csi-u-data--xterm-native-exact-skip-reason (keycode modifier)
+  "Return a skip reason when xterm.el already decodes KEYCODE and MODIFIER."
+  (when (memq keycode
+              (alist-get modifier '((3 . (32))
+                                    (5 . (39 44 45 46 47 48 49 57 59 61 92))
+                                    (7 . (32 39 44 45 46 47 48 49 50 51 52 53
+                                             54 55 56 57 59 61 92)))))
+    (format "xterm.el decodes %s natively"
+            (tmux-emacs-csi-u-data--printable-event-description keycode modifier))))
+
+(defun tmux-emacs-csi-u-data--xterm-native-lossy-skip-reason (keycode modifier)
+  "Return a skip reason when xterm.el collapses KEYCODE and MODIFIER."
+  (when (memq keycode
+              (alist-get modifier '((6 . (33 34 35 36 37 38 40 41 42 43 58 60 62 63))
+                                    (8 . (33 34 35 36 37 38 40 41 42 43 58 60 62 63)))))
+    (let ((collapsed-modifier (alist-get modifier '((6 . 5)
+                                                    (8 . 7)))))
+      (format "xterm.el collapses %s to %s"
+              (tmux-emacs-csi-u-data--printable-event-description keycode modifier)
+              (tmux-emacs-csi-u-data--printable-event-description keycode
+                                                                  collapsed-modifier)))))
+
 (defun tmux-emacs-csi-u-data--generated-uppercase-control-fold-reason (keycode modifier)
   "Return a skip reason for lossy KBD folding.
 This covers uppercase control KEYCODE for MODIFIER."
@@ -53,6 +87,8 @@ This covers uppercase control KEYCODE for MODIFIER."
 (defun tmux-emacs-csi-u-data--generated-printable-skip-reason (keycode modifier)
   "Return the documented skip reason for printable KEYCODE and MODIFIER."
   (cond
+   ((tmux-emacs-csi-u-data--xterm-native-exact-skip-reason keycode modifier))
+   ((tmux-emacs-csi-u-data--xterm-native-lossy-skip-reason keycode modifier))
    ((and (= keycode 73) (= modifier 5)) "kbd normalizes C-I to TAB")
    ((and (= keycode 73) (= modifier 6)) "kbd normalizes C-S-I to S-TAB")
    ((and (= keycode 73) (= modifier 7)) "kbd normalizes C-M-I to M-TAB")
@@ -87,7 +123,7 @@ This covers uppercase control KEYCODE for MODIFIER."
                    keycode modifier reason)
                   entries)))))
     (nreverse entries))
-  "Generated printable CSI-u pairs skipped to avoid lossy kbd aliases.")
+  "Generated printable CSI-u pairs skipped because native decoding covers them.")
 
 (defun tmux-emacs-csi-u-data--generated-printable-skip-p (keycode modifier)
   "Return non-nil when printable KEYCODE and MODIFIER are skipped."
@@ -97,12 +133,8 @@ This covers uppercase control KEYCODE for MODIFIER."
 
 (defun tmux-emacs-csi-u-data--printable-entry (keycode modifier)
   "Return the generated printable CSI-u mapping for KEYCODE and MODIFIER."
-  (let ((prefix (tmux-emacs-csi-u-data-modifier-prefix modifier)))
-    (unless prefix
-      (error "Unsupported tmux CSI-u modifier: %S" modifier))
-    (cons (tmux-emacs-csi-u-data--printable-sequence keycode modifier)
-          (kbd (concat prefix
-                       (tmux-emacs-csi-u-data--printable-base-token keycode))))))
+  (cons (tmux-emacs-csi-u-data--printable-sequence keycode modifier)
+        (tmux-emacs-csi-u-data--printable-binding keycode modifier)))
 
 (defconst tmux-emacs-csi-u-data--generated-printable-table
   (let (table)
@@ -156,21 +188,12 @@ Use KEYCODE, MODIFIER, and EVENT."
 
 (defconst tmux-emacs-csi-u-data--special-table
   `(("\e[32;2u" . ,(kbd "SPC"))
-    ("\e[32;3u" . ,(kbd "M-SPC"))
     ("\e[32;5u" . ,(kbd "C-SPC"))
     ("\e[32;6u" . ,(kbd "C-S-SPC"))
-    ("\e[32;7u" . ,(kbd "C-M-SPC"))
     ("\e[32;8u" . ,(kbd "C-M-S-SPC"))
-    ("\e[13;2u" . ,(kbd "S-RET"))
-    ("\e[13;3u" . ,(kbd "M-RET"))
-    ("\e[13;5u" . ,(kbd "C-RET"))
-    ("\e[13;6u" . ,(kbd "C-S-RET"))
-    ("\e[13;7u" . ,(kbd "C-M-RET"))
-    ("\e[13;8u" . ,(kbd "C-M-S-RET"))
-    ("\e[9;2u" . [backtab])
-    ("\e[9;3u" . ,(vector (event-convert-list '(meta tab))))
-    ("\e[9;5u" . ,(kbd "C-TAB"))
-    ("\e[9;6u" . ,(kbd "C-S-TAB"))
+    ("\e[13;3u" . ,(kbd "M-<return>"))
+    ("\e[13;8u" . ,(kbd "C-M-S-<return>"))
+    ("\e[9;3u" . ,(kbd "M-<tab>"))
     ("\e[127;2u" . [backspace])
     ("\e[127;3u" . [M-backspace])
     ("\e[127;5u" . [C-backspace])
