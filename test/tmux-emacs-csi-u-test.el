@@ -574,8 +574,9 @@
    "script/qa-smoke"
    '("wait_for_condition"
      ">/dev/null 2>&1"
+     "rm -f \"$init_file\" \"$ready_file\" \"$result_file\""
      "Emacs daemon"
-     "tmux session"
+     "tty client ready"
      "qa result file"
      "':status already-enabled'"
      "':preserved-conflicts 0'")))

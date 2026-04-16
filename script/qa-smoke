@@ -11,6 +11,7 @@ socket=${TMPDIR:-/tmp}/tmux-emacs-csi-u-qa-${qa_id}.sock
 server=tmux-emacs-csi-u-qa-${qa_id}
 session=tmux-emacs-csi-u-qa
 init_file=$repo_root/.tmp/qa-init-${qa_id}.el
+ready_file=$repo_root/.tmp/qa-ready-${qa_id}.stamp
 result_file=$repo_root/.tmp/qa-result-${qa_id}.el
 
 mkdir -p "$repo_root/.tmp"
@@ -44,13 +45,13 @@ wait_for_condition "Emacs daemon" 50 \
 cleanup() {
   "$emacsclient_bin" -s "$server" -e '(kill-emacs)' >/dev/null 2>&1 || true
   "$tmux_bin" -S "$socket" kill-server >/dev/null 2>&1 || true
+  rm -f "$init_file" "$ready_file" "$result_file"
 }
 trap cleanup EXIT
 
 "$tmux_bin" -S "$socket" -f /dev/null new-session -d -s "$session" \
-  "TERM=tmux-256color $emacsclient_bin -s $server -t -a '' --eval \"(let ((result-file \\\"$result_file\\\")) (with-temp-file result-file (prin1 (list :supported (tmux-emacs-csi-u-supported-p) :report (tmux-emacs-csi-u-enable) :keys (cl-loop repeat 13 collect (key-description (read-key-sequence-vector \\\"\\\")))) (current-buffer))) (save-buffers-kill-terminal))\""
-wait_for_condition "tmux session" 50 \
-  "$tmux_bin" -S "$socket" has-session -t "$session"
+  "TERM=tmux-256color $emacsclient_bin -s $server -t -a '' --eval \"(let ((ready-file \\\"$ready_file\\\") (result-file \\\"$result_file\\\")) (with-temp-file ready-file (insert \\\"ready\\\\n\\\")) (with-temp-file result-file (prin1 (list :supported (tmux-emacs-csi-u-supported-p) :report (tmux-emacs-csi-u-enable) :keys (cl-loop repeat 13 collect (key-description (read-key-sequence-vector \\\"\\\")))) (current-buffer))) (save-buffers-kill-terminal))\""
+wait_for_condition "tty client ready" 50 test -f "$ready_file"
 
 for seq in \
   $'\e[32;2u' \
