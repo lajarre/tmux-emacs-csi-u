@@ -9,10 +9,6 @@
 (require 'subr-x)
 (require 'tmux-emacs-csi-u-data)
 
-(defun tmux-emacs-csi-u-core-special-table ()
-  "Return a copy of the explicit special-key mapping table."
-  (tmux-emacs-csi-u-data-special-table))
-
 (defun tmux-emacs-csi-u-core--escaped-sequence (sequence)
   "Render SEQUENCE with spec-style escaped ESC."
   (replace-regexp-in-string "\e" "\\\\e" sequence t t))

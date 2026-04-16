@@ -74,7 +74,7 @@ If an old snippet stays in place, the package does not overwrite it silently. Ex
 Policy: warn-and-preserve.
 
 - package-owned candidates install when the sequence is free
-- already-matching bindings count as already enabled, including stock tty equivalents such as `C-<return>` / `M-<tab>` / `C-!`
+- already-matching bindings count as already enabled, including stock tty equivalents such as `M-<tab>` / `M-<return>` / `M-ESC`
 - conflicting external bindings stay in place
 - warnings point at `(tmux-emacs-csi-u-describe)` for the full report
 

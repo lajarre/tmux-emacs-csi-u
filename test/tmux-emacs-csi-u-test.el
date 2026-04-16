@@ -158,9 +158,6 @@
 (declare-function tmux-emacs-csi-u-data-build-candidate-table
                   "tmux-emacs-csi-u-data"
                   (&optional local-overrides))
-(declare-function tmux-emacs-csi-u-core-special-table
-                  "tmux-emacs-csi-u-core"
-                  ())
 (declare-function tmux-emacs-csi-u-core-install-table
                   "tmux-emacs-csi-u-core"
                   (table keymap support-signal &optional owned-bindings))
@@ -394,8 +391,8 @@
               (should (string-match-p (regexp-quote tty-text) rendered))
             (should-not (string-match-p (regexp-quote "tty-type:") rendered))))))))
 
-(ert-deftest tmux-emacs-csi-u-test-special-table-keeps-only-non-native-return-tab-delta ()
-  (let ((special-table (tmux-emacs-csi-u-core-special-table)))
+(ert-deftest tmux-emacs-csi-u-test-special-table-keeps-only-non-native-delta ()
+  (let ((special-table (tmux-emacs-csi-u-data-special-table)))
     (dolist (sequence '("\e[32;3u"
                         "\e[32;7u"
                         "\e[9;2u"
@@ -408,13 +405,14 @@
       (should-not (assoc sequence special-table)))
     (dolist (entry `(("\e[9;3u" . ,(kbd "M-<tab>"))
                      ("\e[13;3u" . ,(kbd "M-<return>"))
-                     ("\e[13;8u" . ,(kbd "C-M-S-<return>"))))
+                     ("\e[13;8u" . ,(kbd "C-M-S-<return>"))
+                     ("\e[27;3u" . ,(kbd "M-ESC"))))
       (should (equal (cdr (assoc (car entry) special-table))
                      (cdr entry))))))
 
 (ert-deftest tmux-emacs-csi-u-test-special-table-detaches-mutable-bindings ()
-  (let* ((binding-a (cdr (assoc "\e[32;2u" (tmux-emacs-csi-u-core-special-table))))
-         (binding-b (cdr (assoc "\e[32;2u" (tmux-emacs-csi-u-core-special-table))))
+  (let* ((binding-a (cdr (assoc "\e[32;2u" (tmux-emacs-csi-u-data-special-table))))
+         (binding-b (cdr (assoc "\e[32;2u" (tmux-emacs-csi-u-data-special-table))))
          (original (aref binding-a 0)))
     (should-not (eq binding-a binding-b))
     (unwind-protect
@@ -422,7 +420,7 @@
           (aset binding-a 0 ?X)
           (should (equal binding-b (kbd "SPC")))
           (should (equal (cdr (assoc "\e[32;2u"
-                                     (tmux-emacs-csi-u-core-special-table)))
+                                     (tmux-emacs-csi-u-data-special-table)))
                          (kbd "SPC"))))
       (aset binding-a 0 original))))
 
@@ -595,6 +593,7 @@
      "tmux stays on `csi-u`"
      "delta over Emacs native tmux/xterm decode"
      "path/to/tmux-emacs-csi-u"
+     "`M-<tab>` / `M-<return>` / `M-ESC`"
      "(require 'tmux-emacs-csi-u)"
      "Delete the ad hoc `input-decode-map` entries"
      "derived from `test/fixture/punctuation.json` (`;2`, `;4`, `;6`, `;8`"
@@ -679,7 +678,7 @@
                    [?:]))))
 
 (ert-deftest tmux-emacs-csi-u-test-install-special-table ()
-  (let* ((table (tmux-emacs-csi-u-core-special-table))
+  (let* ((table (tmux-emacs-csi-u-data-special-table))
          (keymap (make-sparse-keymap))
          (report (tmux-emacs-csi-u-core-install-table table keymap 'force-enable)))
     (should (eq (plist-get report :status) 'installed))
@@ -743,7 +742,7 @@
       (should (= (lookup-key keymap "\e[59;2u") 3)))))
 
 (ert-deftest tmux-emacs-csi-u-test-idempotent-reporting ()
-  (let* ((table (tmux-emacs-csi-u-core-special-table))
+  (let* ((table (tmux-emacs-csi-u-data-special-table))
          (keymap (make-sparse-keymap)))
     (tmux-emacs-csi-u-core-install-table table keymap 'force-enable)
     (let ((report (tmux-emacs-csi-u-core-install-table table keymap 'force-enable)))
@@ -819,6 +818,15 @@
       (should (equal (plist-get conflict :candidate) "[100663328]"))
       (should (string-match-p (regexp-quote "candidate=C-S-SPC") rendered))
       (should-not (string-match-p (regexp-quote "candidate=[100663328]") rendered)))))
+
+(ert-deftest tmux-emacs-csi-u-test-conflict-reporting-humanizes-integer-existing-bindings ()
+  (let* ((keymap (make-sparse-keymap))
+         (table '(("\e[59;2u" . [?:]))))
+    (define-key keymap "\e[5" ?X)
+    (let* ((report (tmux-emacs-csi-u-core-install-table table keymap 'force-enable))
+           (rendered (tmux-emacs-csi-u--render-report report)))
+      (should (string-match-p (regexp-quote "existing=X") rendered))
+      (should-not (string-match-p (regexp-quote "existing=88") rendered)))))
 
 (ert-deftest tmux-emacs-csi-u-test-batch-suite-loads-source-files ()
   (should (equal (file-truename
@@ -934,6 +942,32 @@
         (should (eq (plist-get report :support-signal) 'force-enable))
         (should (eq (plist-get report :status) 'installed))
         (should (equal report (tmux-emacs-csi-u-describe)))))))
+
+(ert-deftest tmux-emacs-csi-u-test-describe-buffer-uses-special-mode ()
+  (let ((tmux-emacs-csi-u-last-report '(:status installed
+						:support-signal force-enable
+						:installed 1
+						:already-matching 0
+						:preserved-conflicts 0
+						:unsupported-or-skipped 0
+						:conflicts nil))
+        displayed-buffer)
+    (unwind-protect
+        (cl-letf (((symbol-function 'called-interactively-p)
+                   (lambda (&rest _args) t))
+                  ((symbol-function 'display-buffer)
+                   (lambda (buffer &optional _action _frame)
+                     (setq displayed-buffer (get-buffer buffer))
+                     displayed-buffer)))
+          (tmux-emacs-csi-u-describe)
+          (should (buffer-live-p displayed-buffer))
+          (with-current-buffer displayed-buffer
+            (should (derived-mode-p 'special-mode))
+            (should buffer-read-only)
+            (should (string-match-p (regexp-quote "status: installed")
+                                    (buffer-string)))))
+      (when-let ((buffer (get-buffer "*tmux-emacs-csi-u*")))
+        (kill-buffer buffer)))))
 
 (ert-deftest tmux-emacs-csi-u-test-auto-enable-syncs-tty-setup-hook ()
   (let ((saved-hook tty-setup-hook)

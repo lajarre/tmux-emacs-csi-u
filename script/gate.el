@@ -20,10 +20,6 @@
        (expand-file-name ".." (file-name-directory (or load-file-name buffer-file-name)))))
   "Absolute repo root with a trailing slash.")
 
-(defconst tmux-emacs-csi-u-script--ignored-directories
-  '(".git" ".pi" ".tmp")
-  "Directories ignored by repo gate helpers.")
-
 (defconst tmux-emacs-csi-u-script--allowed-package-lint-warnings
   '("The word \"emacs\" is redundant in Emacs package names.")
   "Package-lint warning messages tolerated for this repo.")
@@ -41,21 +37,6 @@
 (defun tmux-emacs-csi-u-script--relative-path (path)
   "Return PATH relative to the repo root."
   (file-relative-name path tmux-emacs-csi-u-script--repo-root))
-
-(defun tmux-emacs-csi-u-script--walk-files (directory predicate)
-  "Return files beneath DIRECTORY that satisfy PREDICATE."
-  (let (paths)
-    (dolist (entry (directory-files directory t directory-files-no-dot-files-regexp))
-      (let ((name (file-name-nondirectory entry)))
-        (cond
-         ((file-directory-p entry)
-          (unless (member name tmux-emacs-csi-u-script--ignored-directories)
-            (setq paths
-                  (nconc paths
-                         (tmux-emacs-csi-u-script--walk-files entry predicate)))))
-         ((funcall predicate entry)
-          (push entry paths)))))
-    (sort paths #'string<)))
 
 (defun tmux-emacs-csi-u-script--extension-in-p (path extensions)
   "Return non-nil when PATH has an extension in EXTENSIONS."
