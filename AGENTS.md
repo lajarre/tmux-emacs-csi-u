@@ -1,6 +1,6 @@
 # AGENTS
 
-Repo-local maintainer notes for tmux-emacs-csi-u.
+Repo-local maintainer notes for tmux-csi-u.
 
 ## durable truths
 
@@ -18,7 +18,7 @@ Policy is warn-and-preserve.
 - do not silently overwrite external bindings
 - preserve exact conflicting bindings
 - keep escaped sequence strings in reports
-- use `(tmux-emacs-csi-u-describe)` for maintainer handoff and debugging
+- use `(tmux-csi-u-describe)` for maintainer handoff and debugging
 
 ## verification floor
 

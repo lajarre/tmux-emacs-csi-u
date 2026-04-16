@@ -6,10 +6,10 @@ repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 emacs_bin=${EMACS:-emacs}
 emacsclient_bin=${EMACSCLIENT:-emacsclient}
 tmux_bin=${TMUX_BIN:-tmux}
-qa_id=${TMUX_EMACS_CSI_U_QA_ID:-$$}
-socket=${TMPDIR:-/tmp}/tmux-emacs-csi-u-qa-${qa_id}.sock
-server=tmux-emacs-csi-u-qa-${qa_id}
-session=tmux-emacs-csi-u-qa
+qa_id=${TMUX_CSI_U_QA_ID:-${TMUX_EMACS_CSI_U_QA_ID:-$$}}
+socket=${TMPDIR:-/tmp}/tmux-csi-u-qa-${qa_id}.sock
+server=tmux-csi-u-qa-${qa_id}
+session=tmux-csi-u-qa
 init_file=$repo_root/.tmp/qa-init-${qa_id}.el
 ready_file=$repo_root/.tmp/qa-ready-${qa_id}.stamp
 result_file=$repo_root/.tmp/qa-result-${qa_id}.el
@@ -34,8 +34,8 @@ wait_for_condition() {
 cat > "$init_file" <<EOF
 (add-to-list 'load-path "$repo_root")
 (require 'cl-lib)
-(require 'tmux-emacs-csi-u)
-(setq tmux-emacs-csi-u-auto-enable t)
+(require 'tmux-csi-u)
+(setq tmux-csi-u-auto-enable t)
 EOF
 
 "$emacs_bin" --daemon="$server" --quick --load "$init_file" >/dev/null 2>&1
@@ -50,7 +50,7 @@ cleanup() {
 trap cleanup EXIT
 
 "$tmux_bin" -S "$socket" -f /dev/null new-session -d -s "$session" \
-  "TERM=tmux-256color $emacsclient_bin -s $server -t -a '' --eval \"(let ((ready-file \\\"$ready_file\\\") (result-file \\\"$result_file\\\")) (with-temp-file ready-file (insert \\\"ready\\\\n\\\")) (with-temp-file result-file (prin1 (list :supported (tmux-emacs-csi-u-supported-p) :report (tmux-emacs-csi-u-enable) :keys (cl-loop repeat 13 collect (key-description (read-key-sequence-vector \\\"\\\")))) (current-buffer))) (save-buffers-kill-terminal))\""
+  "TERM=tmux-256color $emacsclient_bin -s $server -t -a '' --eval \"(let ((ready-file \\\"$ready_file\\\") (result-file \\\"$result_file\\\")) (with-temp-file ready-file (insert \\\"ready\\\\n\\\")) (with-temp-file result-file (prin1 (list :supported (tmux-csi-u-supported-p) :report (tmux-csi-u-enable) :keys (cl-loop repeat 13 collect (key-description (read-key-sequence-vector \\\"\\\")))) (current-buffer))) (save-buffers-kill-terminal))\""
 wait_for_condition "tty client ready" 50 test -f "$ready_file"
 
 for seq in \

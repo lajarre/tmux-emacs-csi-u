@@ -129,7 +129,7 @@ Positive support detection requires all of these:
 
 - non-graphical frame
 - live terminal
-- tmux evidence from exact `tty-type` match: `tmux` or `tmux-256color`, or explicit `tmux-emacs-csi-u-force-enable`
+- tmux evidence from exact `tty-type` match: `tmux` or `tmux-256color`, or explicit `tmux-csi-u-force-enable`
 
 Outside that context, enable is a no-op and returns a `skipped` report.
 
@@ -149,7 +149,7 @@ Policy: warn-and-preserve.
 - existing matching bindings are reported as already enabled
 - conflicting external bindings are preserved
 - reports include exact escaped sequence strings such as `\\e[59;2u`
-- human-readable summaries point at `(tmux-emacs-csi-u-describe)`
+- human-readable summaries point at `(tmux-csi-u-describe)`
 
 ## prior art and references
 

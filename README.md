@@ -1,6 +1,8 @@
-# tmux-emacs-csi-u
+# tmux-csi-u.el
 
 Emacs-side decoder for tmux `CSI-u` sequences in terminal Emacs.
+
+Package prefix: `tmux-csi-u`.
 
 tmux stays on `csi-u`. This repo fixes the Emacs TTY decode gap instead of downgrading tmux key reporting.
 
@@ -19,32 +21,34 @@ Scope: the delta over Emacs native tmux/xterm decode, not a replacement for the 
 Clone or place the repo on your Emacs load path, then load it from `init.el`.
 
 ```elisp
-(add-to-list 'load-path (expand-file-name "path/to/tmux-emacs-csi-u"))
-(require 'tmux-emacs-csi-u)
+(add-to-list 'load-path (expand-file-name "path/to/tmux-csi-u.el"))
+(require 'tmux-csi-u)
 
 ;; optional: only for daemon/client edge cases where tty detection cannot
 ;; see tmux directly
-;; (setq tmux-emacs-csi-u-force-enable t)
+;; (setq tmux-csi-u-force-enable t)
 
 ;; optional: add local overrides after package defaults
-;; (setq tmux-emacs-csi-u-local-overrides '(("\e[59;2u" . [f13])))
+;; (setq tmux-csi-u-local-overrides '(("\e[59;2u" . [f13])))
 ```
 
-`tmux-emacs-csi-u-auto-enable` defaults to `t`. The package installs from `tty-setup-hook` for supported TTY frames.
+`tmux-csi-u-auto-enable` defaults to `t`. The package installs from `tty-setup-hook` for supported TTY frames.
 
 Manual enable is available too:
 
 ```elisp
-(tmux-emacs-csi-u-enable)
+(tmux-csi-u-enable)
 ```
+
+Legacy compatibility shims stay available for transition: `require 'tmux-emacs-csi-u` and the old `tmux-emacs-csi-u*` symbols continue to work, but the primary package/file/prefix is now `tmux-csi-u`.
 
 ## public entrypoints
 
-- `tmux-emacs-csi-u-enable` — install candidate mappings for the current TTY terminal and return a report plist
-- `tmux-emacs-csi-u-supported-p` — return non-nil when the current frame looks like a supported tmux TTY context
-- `tmux-emacs-csi-u-describe` — return the latest report plist; interactively, render a human summary buffer
-- `tmux-emacs-csi-u-force-enable` — explicit opt-in for daemon/client edge cases
-- `tmux-emacs-csi-u-local-overrides` — local mappings applied after package defaults; removing an override and re-enabling restores package defaults, or withdraws a package-owned mapping when that sequence is no longer claimed at all and nothing external has taken it over
+- `tmux-csi-u-enable` — install candidate mappings for the current TTY terminal and return a report plist
+- `tmux-csi-u-supported-p` — return non-nil when the current frame looks like a supported tmux TTY context
+- `tmux-csi-u-describe` — return the latest report plist; interactively, render a human summary buffer
+- `tmux-csi-u-force-enable` — explicit opt-in for daemon/client edge cases
+- `tmux-csi-u-local-overrides` — local mappings applied after package defaults; removing an override and re-enabling restores package defaults, or withdraws a package-owned mapping when that sequence is no longer claimed at all and nothing external has taken it over
 
 ## migration from ad hoc bindings
 
@@ -76,7 +80,7 @@ Policy: warn-and-preserve.
 - package-owned candidates install when the sequence is free
 - already-matching bindings count as already enabled, including stock tty equivalents such as `M-<tab>` / `M-<return>` / `M-ESC`
 - conflicting external bindings stay in place
-- warnings point at `(tmux-emacs-csi-u-describe)` for the full report
+- warnings point at `(tmux-csi-u-describe)` for the full report
 
 ## repo source of truth
 
@@ -116,13 +120,11 @@ Use a long-lived daemon started outside the current tmux client. Repo-local smok
 script/qa-smoke
 ```
 
-That helper starts an isolated daemon outside tmux with `--quick --load .tmp/qa-init-*.el`, opens a tty client inside a private tmux session, injects representative CSI-u sequences, and prints the exact command paths it used.
-
 | check | command | pass condition | current note |
 | --- | --- | --- | --- |
 | tty client attach | `script/qa-smoke` | tty client opens against the isolated daemon and exits cleanly | pass 2026-04-15 via `script/qa-smoke` |
 | support detection | `script/qa-smoke` | result includes `:supported t` | pass 2026-04-15 via `script/qa-smoke` |
-| support report | `script/qa-smoke` then `M-x tmux-emacs-csi-u-describe RET` in a normal tty client | smoke output includes `:status already-enabled`, `:support-signal tty-type`, and `:preserved-conflicts 0`; interactive command renders the human report buffer | pass 2026-04-16 for clean report via `script/qa-smoke`; rerun the interactive describe buffer during review |
+| support report | `script/qa-smoke` then `M-x tmux-csi-u-describe RET` in a normal tty client | smoke output includes `:status already-enabled`, `:support-signal tty-type`, and `:preserved-conflicts 0`; interactive command renders the human report buffer | pass 2026-04-16 for clean report via `script/qa-smoke`; rerun the interactive describe buffer during review |
 | Evil ex prompt | `emacsclient -t -a ''` in tmux, then type `:` in normal state | ex prompt opens; no recursive-edit or minibuffer wedge | reviewer step in the real Evil stack |
 | shifted space / backspace | `script/qa-smoke` | result includes `"SPC"` and `"DEL"`; no trailing literal `u` | pass 2026-04-15 via `script/qa-smoke` |
 | shifted punctuation | `script/qa-smoke` plus `test/fixture/punctuation.json` | exact characters arrive; no raw escape debris | pass 2026-04-15 via `script/qa-smoke`; fixture captured with `cat -v` on Ghostty 1.3.1 / tmux 3.6a / GNU Emacs 30.2 / ABC |
@@ -131,7 +133,7 @@ That helper starts an isolated daemon outside tmux with `--quick --load .tmp/qa-
 
 ## troubleshooting
 
-- `tmux-emacs-csi-u-supported-p` returns `nil`: check for a TTY frame, a live terminal, and `tty-type` equal to `tmux` or `tmux-256color`; use `tmux-emacs-csi-u-force-enable` only for daemon/client edge cases
-- `tmux-emacs-csi-u-describe` reports conflicts: remove old ad hoc bindings or keep them intentionally; the package preserves them either way
+- `tmux-csi-u-supported-p` returns `nil`: check for a TTY frame, a live terminal, and `tty-type` equal to `tmux` or `tmux-256color`; use `tmux-csi-u-force-enable` only for daemon/client edge cases
+- `tmux-csi-u-describe` reports conflicts: remove old ad hoc bindings or keep them intentionally; the package preserves them either way
 - punctuation still follows shifted base characters such as `S-;`: verify the explicit override is present and the old local mapping is gone
 - `script/check` fails after a mapping change: update docs and fixtures in the same change
