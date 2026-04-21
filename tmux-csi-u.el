@@ -65,17 +65,20 @@
   (set-default symbol value)
   (tmux-csi-u--sync-tty-setup-hook value))
 
+;;;###autoload
 (defcustom tmux-csi-u-auto-enable t
   "Enable tmux CSI-u decoding automatically from `tty-setup-hook'."
   :type 'boolean
   :set #'tmux-csi-u--set-auto-enable
   :group 'tmux-csi-u)
 
+;;;###autoload
 (defcustom tmux-csi-u-force-enable nil
   "Force-enable tmux CSI-u support for daemon/client edge cases."
   :type 'boolean
   :group 'tmux-csi-u)
 
+;;;###autoload
 (defcustom tmux-csi-u-local-overrides nil
   "Extra CSI-u mappings applied after the package defaults.
 
@@ -135,6 +138,7 @@ candidate before installation."
   "Return the support signal for FRAME."
   (plist-get (tmux-csi-u--support-state frame) :support-signal))
 
+;;;###autoload
 (defun tmux-csi-u-supported-p (&optional frame)
   "Return non-nil when FRAME is a supported tmux TTY context."
   (not (eq (tmux-csi-u--support-signal frame) 'unsupported)))
@@ -182,6 +186,7 @@ candidate before installation."
   (puthash report support-state tmux-csi-u--support-state-by-report)
   report)
 
+;;;###autoload
 (defun tmux-csi-u-enable (&optional frame)
   "Install explicit CSI-u overrides for FRAME's terminal.
 Return the enable report plist."
@@ -247,6 +252,7 @@ Return the enable report plist."
           "\n")
        ""))))
 
+;;;###autoload
 (defun tmux-csi-u-describe ()
   "Return the latest enable report.
 When called interactively, render it in `*tmux-csi-u*'."
