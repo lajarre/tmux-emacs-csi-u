@@ -225,28 +225,5 @@ Return a report plist matching the public enable schema."
             :unsupported-or-skipped unsupported-or-skipped
             :conflicts (nreverse conflicts)))))
 
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-core-special-table
-  'tmux-csi-u-core-special-table
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-core-install-table
-  'tmux-csi-u-core-install-table
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-core--owned-binding
-  'tmux-csi-u-core--owned-binding
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-core--humanize-printed-binding
-  'tmux-csi-u-core--humanize-printed-binding
-  "0.1.0")
-(defconst tmux-emacs-csi-u-core--missing-owned-binding
-  tmux-csi-u-core--missing-owned-binding
-  "Obsolete alias for `tmux-csi-u-core--missing-owned-binding'.")
-(make-obsolete-variable 'tmux-emacs-csi-u-core--missing-owned-binding
-                        'tmux-csi-u-core--missing-owned-binding
-                        "0.1.0")
-
 (provide 'tmux-csi-u-core)
 ;;; tmux-csi-u-core.el ends here

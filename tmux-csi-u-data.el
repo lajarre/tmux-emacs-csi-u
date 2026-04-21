@@ -274,54 +274,5 @@ Use KEYCODE, MODIFIER, and EVENT."
    (tmux-csi-u-data-special-table)
    local-overrides))
 
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data-modifier-prefix
-  'tmux-csi-u-data-modifier-prefix
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data-generated-printable-table
-  'tmux-csi-u-data-generated-printable-table
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data-generated-printable-skip-list
-  'tmux-csi-u-data-generated-printable-skip-list
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data-special-table
-  'tmux-csi-u-data-special-table
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data-build-candidate-table
-  'tmux-csi-u-data-build-candidate-table
-  "0.1.0")
-(define-obsolete-function-alias
-  'tmux-emacs-csi-u-data--copy-binding
-  'tmux-csi-u-data--copy-binding
-  "0.1.0")
-(defconst tmux-emacs-csi-u-data--modifier-prefixes
-  tmux-csi-u-data--modifier-prefixes
-  "Obsolete alias for `tmux-csi-u-data--modifier-prefixes'.")
-(make-obsolete-variable 'tmux-emacs-csi-u-data--modifier-prefixes
-                        'tmux-csi-u-data--modifier-prefixes
-                        "0.1.0")
-(defconst tmux-emacs-csi-u-data--generated-printable-table
-  tmux-csi-u-data--generated-printable-table
-  "Obsolete alias for `tmux-csi-u-data--generated-printable-table'.")
-(make-obsolete-variable 'tmux-emacs-csi-u-data--generated-printable-table
-                        'tmux-csi-u-data--generated-printable-table
-                        "0.1.0")
-(defconst tmux-emacs-csi-u-data--generated-printable-skip-list
-  tmux-csi-u-data--generated-printable-skip-list
-  "Obsolete alias for `tmux-csi-u-data--generated-printable-skip-list'.")
-(make-obsolete-variable 'tmux-emacs-csi-u-data--generated-printable-skip-list
-                        'tmux-csi-u-data--generated-printable-skip-list
-                        "0.1.0")
-(defconst tmux-emacs-csi-u-data--special-table
-  tmux-csi-u-data--special-table
-  "Obsolete alias for `tmux-csi-u-data--special-table'.")
-(make-obsolete-variable 'tmux-emacs-csi-u-data--special-table
-                        'tmux-csi-u-data--special-table
-                        "0.1.0")
-
 (provide 'tmux-csi-u-data)
 ;;; tmux-csi-u-data.el ends here
