@@ -17,7 +17,6 @@
 (defconst tmux-csi-u-script--repo-root
   (file-name-as-directory
    (or (getenv "TMUX_CSI_U_REPO_ROOT")
-       (getenv "TMUX_EMACS_CSI_U_REPO_ROOT")
        (expand-file-name ".." (file-name-directory (or load-file-name buffer-file-name)))))
   "Absolute repo root with a trailing slash.")
 
@@ -273,13 +272,6 @@ When CHECK-ONLY is non-nil, do not write the formatted contents."
     (dolist (path (tmux-csi-u-script--compile-files))
       (tmux-csi-u-script--compile-file-or-die path))
     (princ "compile ok\n")))
-
-(defalias 'tmux-emacs-csi-u-script-format #'tmux-csi-u-script-format)
-(defalias 'tmux-emacs-csi-u-script-format-check #'tmux-csi-u-script-format-check)
-(defalias 'tmux-emacs-csi-u-script-bootstrap-package-lint
-  #'tmux-csi-u-script-bootstrap-package-lint)
-(defalias 'tmux-emacs-csi-u-script-lint #'tmux-csi-u-script-lint)
-(defalias 'tmux-emacs-csi-u-script-compile #'tmux-csi-u-script-compile)
 
 (provide 'gate)
 ;;; gate.el ends here

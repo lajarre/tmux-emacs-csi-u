@@ -14,11 +14,3 @@ tmux_csi_u_gate() {
   TMUX_CSI_U_REPO_ROOT="$repo_root" \
     tmux_csi_u_batch -l "$repo_root/script/gate.el" --funcall "$1"
 }
-
-tmux_emacs_csi_u_batch() {
-  tmux_csi_u_batch "$@"
-}
-
-tmux_emacs_csi_u_gate() {
-  tmux_csi_u_gate "$@"
-}

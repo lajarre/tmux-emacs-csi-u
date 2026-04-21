@@ -6,7 +6,7 @@ repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 emacs_bin=${EMACS:-emacs}
 emacsclient_bin=${EMACSCLIENT:-emacsclient}
 tmux_bin=${TMUX_BIN:-tmux}
-qa_id=${TMUX_CSI_U_QA_ID:-${TMUX_EMACS_CSI_U_QA_ID:-$$}}
+qa_id=${TMUX_CSI_U_QA_ID:-$$}
 socket=${TMPDIR:-/tmp}/tmux-csi-u-qa-${qa_id}.sock
 server=tmux-csi-u-qa-${qa_id}
 session=tmux-csi-u-qa
