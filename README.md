@@ -21,7 +21,7 @@ Scope: the delta over Emacs native tmux/xterm decode, not a replacement for the 
 Clone or place the repo on your Emacs load path, then load it from `init.el`.
 
 ```elisp
-(add-to-list 'load-path (expand-file-name "path/to/tmux-csi-u.el"))
+(add-to-list 'load-path (expand-file-name "path/to/tmux-csi-u"))
 (require 'tmux-csi-u)
 
 ;; optional: only for daemon/client edge cases where tty detection cannot
