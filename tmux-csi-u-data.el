@@ -1,5 +1,13 @@
 ;;; tmux-csi-u-data.el --- tmux CSI-u mapping data -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2026 lajarre
+
+;; Author: lajarre <1884912+lajarre@users.noreply.github.com>
+;; Maintainer: lajarre <1884912+lajarre@users.noreply.github.com>
+;; Keywords: terminals, tools
+;; URL: https://github.com/lajarre/tmux-csi-u.el
+;; SPDX-License-Identifier: MIT
+
 ;;; Commentary:
 
 ;; Canonical mapping data for the `tmux-csi-u' package: the tmux CSI-u

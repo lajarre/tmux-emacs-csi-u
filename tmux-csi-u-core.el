@@ -1,5 +1,13 @@
 ;;; tmux-csi-u-core.el --- tmux CSI-u core helpers -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2026 lajarre
+
+;; Author: lajarre <1884912+lajarre@users.noreply.github.com>
+;; Maintainer: lajarre <1884912+lajarre@users.noreply.github.com>
+;; Keywords: terminals, tools
+;; URL: https://github.com/lajarre/tmux-csi-u.el
+;; SPDX-License-Identifier: MIT
+
 ;;; Commentary:
 
 ;; Internal helpers shared by the public `tmux-csi-u' API.  Provides

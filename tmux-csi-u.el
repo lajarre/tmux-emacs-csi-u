@@ -1,11 +1,14 @@
 ;;; tmux-csi-u.el --- Tmux CSI-u decoder -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2026 lajarre
+
 ;; Author: lajarre <1884912+lajarre@users.noreply.github.com>
 ;; Maintainer: lajarre <1884912+lajarre@users.noreply.github.com>
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: terminals, tools
 ;; URL: https://github.com/lajarre/tmux-csi-u.el
+;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
 
