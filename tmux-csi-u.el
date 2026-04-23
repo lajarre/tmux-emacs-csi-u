@@ -4,7 +4,7 @@
 
 ;; Author: lajarre <1884912+lajarre@users.noreply.github.com>
 ;; Maintainer: lajarre <1884912+lajarre@users.noreply.github.com>
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: terminals, tools
 ;; URL: https://github.com/lajarre/tmux-csi-u.el
