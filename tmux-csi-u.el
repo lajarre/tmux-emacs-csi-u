@@ -58,24 +58,6 @@
   "Enable tmux CSI-u decoding for the current tty frame."
   (tmux-csi-u-enable (selected-frame)))
 
-(defun tmux-csi-u--sync-tty-setup-hook (enabled)
-  "Synchronize `tty-setup-hook' according to ENABLED."
-  (remove-hook 'tty-setup-hook #'tmux-csi-u--tty-setup-enable)
-  (when enabled
-    (add-hook 'tty-setup-hook #'tmux-csi-u--tty-setup-enable t)))
-
-(defun tmux-csi-u--set-auto-enable (symbol value)
-  "Set SYMBOL to VALUE and synchronize `tty-setup-hook'."
-  (set-default symbol value)
-  (tmux-csi-u--sync-tty-setup-hook value))
-
-;;;###autoload
-(defcustom tmux-csi-u-auto-enable t
-  "Enable tmux CSI-u decoding automatically from `tty-setup-hook'."
-  :type 'boolean
-  :set #'tmux-csi-u--set-auto-enable
-  :group 'tmux-csi-u)
-
 ;;;###autoload
 (defcustom tmux-csi-u-force-enable nil
   "Force-enable tmux CSI-u support for daemon/client edge cases."
@@ -215,6 +197,77 @@ Return the enable report plist."
       (tmux-csi-u--warn-on-new-conflicts frame conflicts))
     report))
 
+(defun tmux-csi-u--uninstall-owned-from-keymap (keymap)
+  "Remove package-installed CSI-u entries from KEYMAP.
+Return the number of bindings removed."
+  (let ((owned-bindings (gethash keymap tmux-csi-u--owned-bindings-by-keymap))
+        (removed 0))
+    (when (hash-table-p owned-bindings)
+      (let (entries)
+        (maphash (lambda (sequence owned)
+                   (push (cons sequence owned) entries))
+                 owned-bindings)
+        (dolist (entry entries)
+          (let* ((sequence (car entry))
+                 (owned (cdr entry))
+                 (existing (tmux-csi-u-core--lookup-exact-binding
+                            keymap sequence)))
+            (when (tmux-csi-u-core--owned-binding-instance-p
+                   existing owned)
+              (define-key keymap sequence nil)
+              (setq removed (1+ removed))))))
+      (clrhash owned-bindings))
+    removed))
+
+;;;###autoload
+(defun tmux-csi-u-disable (&optional frame)
+  "Remove explicit CSI-u overrides previously installed for FRAME's terminal.
+Walk the package-owned binding cache for FRAME's `input-decode-map' and
+remove only entries the package itself installed.  External bindings,
+including ones installed by other packages, are preserved unchanged.
+Return a disable report plist."
+  (interactive)
+  (let* ((frame (or frame (selected-frame)))
+         (keymap (tmux-csi-u--frame-input-decode-map frame))
+         (removed (tmux-csi-u--uninstall-owned-from-keymap keymap)))
+    (list :status (if (zerop removed) 'already-disabled 'disabled)
+          :removed removed)))
+
+(defun tmux-csi-u--disable-all-owned ()
+  "Remove package-installed CSI-u entries from every live terminal that has any.
+Iterate `tmux-csi-u--owned-bindings-by-keymap' (which has weak keys, so
+defunct keymaps drop naturally) and run the same un-install loop as
+`tmux-csi-u-disable' on each remaining keymap.  Does NOT consult
+`tmux-csi-u-supported-p' -- we un-install whatever the package owns now,
+regardless of current support state."
+  (when (hash-table-p tmux-csi-u--owned-bindings-by-keymap)
+    (let (keymaps)
+      (maphash (lambda (keymap _owned)
+                 (push keymap keymaps))
+               tmux-csi-u--owned-bindings-by-keymap)
+      (dolist (keymap keymaps)
+        (tmux-csi-u--uninstall-owned-from-keymap keymap)))))
+
+;;;###autoload
+(define-minor-mode tmux-csi-u-mode
+  "Decode tmux CSI-u key sequences in terminal Emacs.
+When enabled, install explicit `input-decode-map' entries for every
+supported tmux TTY frame, including frames that are already live, and
+add a `tty-setup-hook' entry so future TTY frames get the same
+treatment.  Disabling reverses both: removes the hook and un-installs
+package-owned entries from every live terminal that has them."
+  :global t
+  :group 'tmux-csi-u
+  (cond
+   (tmux-csi-u-mode
+    (add-hook 'tty-setup-hook #'tmux-csi-u--tty-setup-enable 90)
+    (dolist (frame (frame-list))
+      (when (tmux-csi-u-supported-p frame)
+        (tmux-csi-u-enable frame))))
+   (t
+    (remove-hook 'tty-setup-hook #'tmux-csi-u--tty-setup-enable)
+    (tmux-csi-u--disable-all-owned))))
+
 (defun tmux-csi-u--render-skip-reason (report)
   "Render the unsupported activation reason from REPORT."
   (let ((support-state (gethash report tmux-csi-u--support-state-by-report)))
@@ -271,8 +324,6 @@ When called interactively, render it in `*tmux-csi-u*'."
         (goto-char (point-min)))
       (display-buffer (current-buffer))))
   tmux-csi-u-last-report)
-
-(tmux-csi-u--sync-tty-setup-hook tmux-csi-u-auto-enable)
 
 (provide 'tmux-csi-u)
 ;;; tmux-csi-u.el ends here
