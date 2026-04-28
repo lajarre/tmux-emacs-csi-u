@@ -199,6 +199,14 @@ Return the enable report plist."
     (setq tmux-csi-u-last-report report)
     (when-let ((conflicts (plist-get report :conflicts)))
       (tmux-csi-u--warn-on-new-conflicts frame conflicts))
+    (when (called-interactively-p 'interactive)
+      (message
+       "tmux-csi-u: %s (installed %d, already-matching %d, conflicts %d, skipped %d).  M-x tmux-csi-u-describe' for details."
+       (plist-get report :status)
+       (plist-get report :installed)
+       (plist-get report :already-matching)
+       (plist-get report :preserved-conflicts)
+       (plist-get report :unsupported-or-skipped)))
     report))
 
 (defun tmux-csi-u--uninstall-owned-from-keymap (keymap)
@@ -240,9 +248,15 @@ Return a disable report plist."
   (interactive)
   (let* ((frame (or frame (selected-frame)))
          (keymap (tmux-csi-u--frame-input-decode-map frame))
-         (removed (tmux-csi-u--uninstall-owned-from-keymap keymap)))
-    (list :status (if (zerop removed) 'already-disabled 'disabled)
-          :removed removed)))
+         (removed (tmux-csi-u--uninstall-owned-from-keymap keymap))
+         (report (list :status (if (zerop removed) 'already-disabled 'disabled)
+                       :removed removed)))
+    (when (called-interactively-p 'interactive)
+      (message
+       "tmux-csi-u: %s (removed %d).  M-x tmux-csi-u-describe' for details."
+       (plist-get report :status)
+       (plist-get report :removed)))
+    report))
 
 (defun tmux-csi-u--disable-all-owned ()
   "Remove package-installed CSI-u entries from every live terminal that has any.
