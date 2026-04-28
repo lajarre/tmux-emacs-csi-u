@@ -1054,7 +1054,11 @@
             (define-key keymap sequence external-binding)
             (should (eq (lookup-key keymap sequence) external-binding))
             (tmux-csi-u-mode -1)
-            (should (eq (lookup-key keymap sequence) external-binding))))
+            (should (eq (lookup-key keymap sequence) external-binding))
+            (let ((owned (gethash keymap
+                                  tmux-csi-u--owned-bindings-by-keymap)))
+              (should (hash-table-p owned))
+              (should (zerop (hash-table-count owned))))))
       (setq tty-setup-hook saved-hook)
       (if saved-mode (tmux-csi-u-mode 1) (tmux-csi-u-mode -1)))))
 
