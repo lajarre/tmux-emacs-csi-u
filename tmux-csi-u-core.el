@@ -139,7 +139,7 @@ Use SUPPORT-SIGNAL, INSTALLED, CONFLICTS, and UNSUPPORTED."
 Intentionally conservative: only object identity counts as proof
 that the package still owns the current binding."
   (and (not (eq owned tmux-csi-u-core--missing-owned-binding))
-       (or (stringp owned) (vectorp owned) (consp owned))
+       (or (stringp owned) (vectorp owned) (consp owned) (integerp owned))
        (eq existing owned)))
 
 (defun tmux-csi-u-core--record-owned-binding (owned-bindings sequence binding)
